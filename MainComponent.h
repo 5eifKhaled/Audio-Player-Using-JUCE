@@ -8,7 +8,7 @@ public:
     MainComponent()
     {
         addAndMakeVisible(playerGUI);
-        setSize(500, 700);
+        setSize(600, 800);
         setAudioChannels(0, 2);
     }
 

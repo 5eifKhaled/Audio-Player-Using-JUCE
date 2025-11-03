@@ -3,25 +3,31 @@
 PlayerAudio::PlayerAudio()
 {
     formatManager.registerBasicFormats();
+
     resamplingSource = std::make_unique<juce::ResamplingAudioSource>(&transportSource, false, 2);
 }
 
 PlayerAudio::~PlayerAudio()
 {
-    resamplingSource->releaseResources();
-    transportSource.releaseResources();
+    releaseResources();
 }
 
 AudioFileInfo PlayerAudio::loadFile(const juce::File& file)
 {
     AudioFileInfo info;
+
+    transportSource.stop();
+    transportSource.setSource(nullptr);
+    readerSource.reset();
+
     auto* reader = formatManager.createReaderFor(file);
     if (reader != nullptr)
     {
-        readerSource.reset(new juce::AudioFormatReaderSource(reader, true));
+        readerSource = std::make_unique<juce::AudioFormatReaderSource>(reader, true);
 
         transportSource.setSource(readerSource.get(), 0, nullptr, reader->sampleRate);
 
+        // metadata (try both lowercase and uppercase keys)
         auto& meta = reader->metadataValues;
         auto getMeta = [&](const juce::String& a, const juce::String& b)
             {
@@ -38,17 +44,25 @@ AudioFileInfo PlayerAudio::loadFile(const juce::File& file)
         if (info.artist.isEmpty()) info.artist = "Unknown Artist";
         if (info.album.isEmpty())  info.album = "Unknown Album";
 
+        // duration
         double lengthSecs = 0.0;
         if (reader->sampleRate > 0.0)
             lengthSecs = static_cast<double>(reader->lengthInSamples) / reader->sampleRate;
+
+        currentLength = lengthSecs;
 
         int mins = static_cast<int>(lengthSecs / 60.0);
         int secs = static_cast<int>(std::fmod(lengthSecs, 60.0));
         info.durationString = juce::String::formatted("%02d:%02d", mins, secs);
 
+        // reset position
         transportSource.setPosition(0.0);
-        currentLength = lengthSecs;
     }
+    else
+    {
+        DBG("PlayerAudio::loadFile - Could not open file: " << file.getFullPathName());
+    }
+
     return info;
 }
 
