@@ -3,13 +3,13 @@
 PlayerAudio::PlayerAudio()
 {
     formatManager.registerBasicFormats();
-
     resamplingSource = std::make_unique<juce::ResamplingAudioSource>(&transportSource, false, 2);
 }
 
 PlayerAudio::~PlayerAudio()
 {
-    releaseResources();
+    resamplingSource->releaseResources();
+    transportSource.releaseResources();
 }
 
 AudioFileInfo PlayerAudio::loadFile(const juce::File& file)
@@ -89,7 +89,7 @@ void PlayerAudio::goToEnd()
     {
         auto* reader = readerSource->getAudioFormatReader();
         if (reader && reader->sampleRate > 0.0)
-            transportSource.setPosition(static_cast<double>(reader->lengthInSamples) / reader->sampleRate);
+            transportSource.setPosition(reader->lengthInSamples / reader->sampleRate);
     }
 }
 
@@ -115,71 +115,51 @@ void PlayerAudio::setLooping(bool shouldLoop)
 void PlayerAudio::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
 {
     transportSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
-    if (resamplingSource)
-        resamplingSource->prepareToPlay(samplesPerBlockExpected, sampleRate);
+    resamplingSource->prepareToPlay(samplesPerBlockExpected, sampleRate);
 }
 
 void PlayerAudio::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
 {
-    if (resamplingSource)
-        resamplingSource->getNextAudioBlock(bufferToFill);
-    else
-        bufferToFill.clearActiveBufferRegion();
+    resamplingSource->getNextAudioBlock(bufferToFill);
 }
 
 void PlayerAudio::releaseResources()
 {
-    if (resamplingSource)
-        resamplingSource->releaseResources();
+    resamplingSource->releaseResources();
     transportSource.releaseResources();
 }
 
-void PlayerAudio::setGain(float gain)
-{
-    transportSource.setGain(gain);
-}
+void PlayerAudio::setGain(float gain) { transportSource.setGain(gain); }
+float PlayerAudio::getGain() const { return transportSource.getGain(); }
 
-float PlayerAudio::getGain() const
-{
-    return transportSource.getGain();
-}
+double PlayerAudio::getCurrentPosition() const { return transportSource.getCurrentPosition(); }
+double PlayerAudio::getLengthInSeconds() const { return currentLength; }
 
-double PlayerAudio::getCurrentPosition() const
+void PlayerAudio::setPositionSafe(double pos)
 {
-    return transportSource.getCurrentPosition();
-}
-
-double PlayerAudio::getLengthInSeconds() const
-{
-    return currentLength;
-}
-
-void PlayerAudio::setPositionSafe(double posInSeconds)
-{
-    if (posInSeconds < 0.0) posInSeconds = 0.0;
+    if (pos < 0.0) pos = 0.0;
     double length = getLengthInSeconds();
-    if (length > 0.0 && posInSeconds > length) posInSeconds = length;
-    transportSource.setPosition(posInSeconds);
+    if (pos > length) pos = length;
+    transportSource.setPosition(pos);
 }
 
 void PlayerAudio::skipForward(double seconds)
 {
-    if (seconds <= 0.0) return;
-    double pos = transportSource.getCurrentPosition();
-    setPositionSafe(pos + seconds);
+    if (seconds > 0.0)
+        setPositionSafe(transportSource.getCurrentPosition() + seconds);
 }
 
 void PlayerAudio::skipBackward(double seconds)
 {
-    if (seconds <= 0.0) return;
-    double pos = transportSource.getCurrentPosition();
-    setPositionSafe(pos - seconds);
+    if (seconds > 0.0)
+        setPositionSafe(transportSource.getCurrentPosition() - seconds);
 }
 
 void PlayerAudio::setSpeed(double speed)
 {
-    if (speed <= 0.0) return;
-    currentSpeed = speed;
-    if (resamplingSource)
+    if (speed > 0.0)
+    {
+        currentSpeed = speed;
         resamplingSource->setResamplingRatio(speed);
+    }
 }

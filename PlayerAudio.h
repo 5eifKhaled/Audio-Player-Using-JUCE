@@ -3,10 +3,7 @@
 
 struct AudioFileInfo
 {
-    juce::String title;
-    juce::String artist;
-    juce::String album;
-    juce::String durationString;
+    juce::String title, artist, album, durationString;
 };
 
 class PlayerAudio : public juce::AudioSource
@@ -34,21 +31,25 @@ public:
 
     double getCurrentPosition() const;
     double getLengthInSeconds() const;
+    void setPositionSafe(double posInSeconds);
 
     void skipForward(double seconds);
     void skipBackward(double seconds);
-    void setPositionSafe(double posInSeconds);
 
+    // ?? Speed
     void setSpeed(double speed);
     double getSpeed() const { return currentSpeed; }
 
     bool isMuted() const { return muted; }
+    juce::File getCurrentFile() const { return currentFile; }
 
 private:
     juce::AudioFormatManager formatManager;
     std::unique_ptr<juce::AudioFormatReaderSource> readerSource;
     juce::AudioTransportSource transportSource;
     std::unique_ptr<juce::ResamplingAudioSource> resamplingSource;
+
+    juce::File currentFile;
 
     bool muted = false;
     bool looping = false;
