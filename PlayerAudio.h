@@ -36,7 +36,6 @@ public:
     void skipForward(double seconds);
     void skipBackward(double seconds);
 
-    // ?? Speed
     void setSpeed(double speed);
     double getSpeed() const { return currentSpeed; }
 

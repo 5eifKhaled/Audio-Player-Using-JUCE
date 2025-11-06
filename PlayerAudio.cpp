@@ -27,7 +27,7 @@ AudioFileInfo PlayerAudio::loadFile(const juce::File& file)
 
         transportSource.setSource(readerSource.get(), 0, nullptr, reader->sampleRate);
 
-        // metadata (try both lowercase and uppercase keys)
+        // metadata
         auto& meta = reader->metadataValues;
         auto getMeta = [&](const juce::String& a, const juce::String& b)
             {

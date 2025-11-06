@@ -3,7 +3,6 @@
 #include <JuceHeader.h>
 #include "PlayerAudio.h"
 
-// WaveformComponent is embedded here so you don't need another file.
 class WaveformComponent : public juce::Component,
     private juce::ChangeListener
 {
@@ -21,7 +20,6 @@ public:
         thumbnail.removeChangeListener(this);
     }
 
-    // Load a file into the thumbnail
     void setFile(const juce::File& f)
     {
         file = f;
@@ -45,7 +43,7 @@ public:
     {
         auto r = getLocalBounds().toFloat().reduced(6.0f);
 
-        // background with simple shadow path
+        // background
         juce::Path p;
         p.addRoundedRectangle(r, 8.0f);
         juce::DropShadow ds(juce::Colours::black.withAlpha(0.55f), 6, juce::Point<int>(0, 2));
@@ -140,7 +138,6 @@ private:
     double bMarker = -1.0;
 };
 
-// =================== PlayerGUI ===================
 class PlayerGUI : public juce::Component,
     public juce::Button::Listener,
     public juce::Slider::Listener,
@@ -154,47 +151,39 @@ public:
     void paint(juce::Graphics&) override;
     void resized() override;
 
-    // Listeners
     void buttonClicked(juce::Button* button) override;
     void sliderValueChanged(juce::Slider* slider) override;
     void timerCallback() override;
 
-    // playlist (ListBoxModel)
+    // playlist
     int getNumRows() override;
     void paintListBoxItem(int rowNumber, juce::Graphics& g, int width, int height, bool rowIsSelected) override;
     void selectedRowsChanged(int lastRowSelected) override;
 
-    // expose audio if needed
     PlayerAudio& getPlayerAudio() noexcept { return playerAudio; }
 
 private:
     PlayerAudio playerAudio;
 
-    // Buttons
     juce::TextButton loadButton{ "Load" }, playButton{ "Play" }, pauseButton{ "Pause" },
         stopButton{ "Stop" }, restartButton{ "Restart" }, muteButton{ "Mute" },
         loopButton{ "Loop" }, startButton{ "|<" }, endButton{ ">|" },
         back10Button{ "<10s" }, fwd10Button{ "10s>" }, nextButton{ "Next>>" }, prevButton{ "<<Prev" };
 
-    // A-B
     juce::TextButton setAButton{ "Set A" }, setBButton{ "Set B" }, loopABButton{ "Loop A-B" };
 
-    // sliders + labels
     juce::Slider volumeSlider, progressSlider, speedSlider;
     juce::Label speedLabel, titleLabel, artistLabel, albumLabel, durationLabel;
 
-    // playlist UI
     juce::ListBox playlistBox;
     juce::Array<juce::File> playlistFiles;
     juce::StringArray playlistNames;
     int currentIndex = -1;
 
-    // waveform component (embedded)
     WaveformComponent waveform;
 
     std::unique_ptr<juce::FileChooser> fileChooser;
 
-    // A-B state
     bool abLoopEnabled = false;
     double pointA = -1.0;
     double pointB = -1.0;

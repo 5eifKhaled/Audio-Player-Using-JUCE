@@ -2,7 +2,7 @@
 
 PlayerGUI::PlayerGUI()
 {
-    // add buttons + listeners
+    // buttons and listeners
     auto buttons = { &loadButton, &playButton, &pauseButton, &stopButton, &restartButton,
                      &muteButton, &loopButton, &startButton, &endButton, &back10Button,
                      &fwd10Button, &nextButton, &prevButton, &setAButton, &setBButton, &loopABButton };
@@ -33,7 +33,7 @@ PlayerGUI::PlayerGUI()
     speedLabel.setText("Speed: 1.0x", juce::dontSendNotification);
     speedLabel.setColour(juce::Label::textColourId, juce::Colours::lightgrey);
 
-    // metadata labels
+    // metadata labels (something aint right it only fetch metadata for .wav files)
     titleLabel.setFont(juce::Font(16.0f, juce::Font::bold));
     artistLabel.setFont(juce::Font(13.0f));
     albumLabel.setFont(juce::Font(12.0f));
@@ -53,7 +53,6 @@ PlayerGUI::PlayerGUI()
     // waveform
     addAndMakeVisible(waveform);
 
-    // wire waveform seeking callback
     waveform.onPositionSelected = [this](double sec)
         {
             playerAudio.setPositionSafe(sec);
@@ -180,7 +179,7 @@ void PlayerGUI::timerCallback()
         waveform.setLength(len);
         waveform.setAB(pointA, pointB);
 
-        // A-B loop enforcement
+        // A-B loop enforce
         if (abLoopEnabled && pointA >= 0.0 && pointB > pointA && pos >= pointB)
             playerAudio.setPositionSafe(pointA);
     }
